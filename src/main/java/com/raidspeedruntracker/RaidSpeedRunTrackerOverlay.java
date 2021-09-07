@@ -49,32 +49,52 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 		int currentRoomIndex = raidSpeedRunTrackerPlugin.GetCurrentRoomIndex();
 
 		LocalTime time;
+		Duration elapsed;
 
-		Duration elapsed = Duration.between(startTime, Instant.now());
+		Color timeColor = Color.WHITE;
+
+		if (raidSpeedRunTrackerPlugin.IsRaidComplete())
+		{
+			elapsed = raidSpeedRunTrackerPlugin.GetRaidTotalTime();
+			Split raidPbTime = raidSpeedRunTrackerPlugin.GetRaidEndPbSplit();
+			if (raidPbTime != null && raidPbTime.originalPbDuration != null )
+			{
+				if (elapsed.compareTo(raidPbTime.originalPbDuration) < 0)
+				{
+					timeColor = Color.GREEN;
+				}
+				else
+				{
+					timeColor = Color.RED;
+				}
+			}
+		}
+		else
+		{
+			elapsed = Duration.between(startTime, Instant.now());
+		}
+
 		time = LocalTime.ofSecondOfDay(elapsed.getSeconds());
 
 		String formattedTime = time.format(DateTimeFormatter.ofPattern("mm:ss"));
 
-		Color timeColor = Color.WHITE;
-
 		Split[] splits = raidSpeedRunTrackerPlugin.GetSplits();
+
 		int offset = config.numLines() / 2;
-		if (currentRoomIndex - offset < 0)
+		int startRoomIndex = currentRoomIndex;
+
+		if (startRoomIndex + config.numLines() > splits.length + 1)
 		{
-			if (Math.abs(currentRoomIndex - offset) == offset)
-			{
-				offset = 0;
-			}
-			else
-			{
-				offset = Math.abs(currentRoomIndex - offset);
-			}
+			startRoomIndex = splits.length - config.numLines();
 		}
-		int startRoomIndex = currentRoomIndex - offset;
-
-		Split[] splitsToShow;
-
-
+		else if (startRoomIndex - offset < 0)
+		{
+			startRoomIndex = 0;
+		}
+		else
+		{
+			startRoomIndex = startRoomIndex - offset;
+		}
 
 		for (int i = startRoomIndex; i < config.numLines() + startRoomIndex; i++)
 		{
@@ -96,13 +116,19 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 					if (splitDuration.isNegative())
 					{
 						splitColor = Color.GREEN;
-						timeColor = Color.GREEN;
+						if(!raidSpeedRunTrackerPlugin.IsRaidComplete())
+						{
+							timeColor = Color.GREEN;
+						}
 						splitString += "-";
 					}
 					else
 					{
 						splitColor = Color.RED;
-						timeColor = Color.RED;
+						if(!raidSpeedRunTrackerPlugin.IsRaidComplete())
+						{
+							timeColor = Color.RED;
+						}
 						splitString += "+";
 					}
 
@@ -118,8 +144,10 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 				}
 			}
 
+			String name = split.raidRoom.getName().toLowerCase().equals("end") ? "Olm" : split.raidRoom.getName();
+
 			panelComponent.getChildren().add(LineComponent.builder()
-				.left(split.raidRoom.getName() + (currentRow ? " <-" : ""))
+				.left(name + (currentRow ? " <-" : ""))
 				.right(splitString + " " + split.pbString)
 				.rightColor(splitColor)
 				.build());
