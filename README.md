@@ -1,4 +1,4 @@
-# CoX CM Speed Run Tracker
+# CoX CM Speed Run Tracker (beta)
 Tracks times for each boss in solo CMs
 
 ## To do:
