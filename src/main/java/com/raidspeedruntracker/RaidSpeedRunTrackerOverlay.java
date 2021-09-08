@@ -21,7 +21,7 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 	private final RaidSpeedRunTrackerConfig config;
 	private final PanelComponent panelComponent = new PanelComponent();
 	private final RaidSpeedRunTrackerPlugin raidSpeedRunTrackerPlugin;
-	private final static String HOUR_FORMAT = "hh:mm";
+	private final static String HOUR_FORMAT = "HH:mm:ss";
 	private final static String MINUTE_FORMAT = "mm:ss";
 	private final static String MILLISECOND_FORMAT = "ss.ss";
 
@@ -94,7 +94,6 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 					Duration splitDuration = Duration.between(startTime, Instant.now());
 					splitDuration = splitDuration.minus(split.pbDuration);
 
-					//TODO:ofSecondOfDay breaks when being passed more than an hour worth of seconds
 					LocalTime splitTime = LocalTime.ofSecondOfDay(splitDuration.abs().getSeconds());
 
 					if (splitDuration.isNegative())
@@ -180,6 +179,6 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 
 	private DateTimeFormatter getTimeFormat(LocalTime time)
 	{
-		return DateTimeFormatter.ofPattern(time.getMinute() >= 60 ? HOUR_FORMAT : MINUTE_FORMAT);
+		return DateTimeFormatter.ofPattern(time.getHour() > 0 ? HOUR_FORMAT : MINUTE_FORMAT);
 	}
 }
