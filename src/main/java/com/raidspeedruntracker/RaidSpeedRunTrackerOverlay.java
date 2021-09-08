@@ -21,6 +21,9 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 	private final RaidSpeedRunTrackerConfig config;
 	private final PanelComponent panelComponent = new PanelComponent();
 	private final RaidSpeedRunTrackerPlugin raidSpeedRunTrackerPlugin;
+	private final static String HOUR_FORMAT = "hh:mm";
+	private final static String MINUTE_FORMAT = "mm:ss";
+	private final static String MILLISECOND_FORMAT = "ss.ss";
 
 	@Inject
 	public RaidSpeedRunTrackerOverlay(Client client, RaidSpeedRunTrackerConfig config, RaidSpeedRunTrackerPlugin raidSpeedRunTrackerPlugin)
@@ -51,35 +54,6 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 		Duration elapsed;
 
 		Color timeColor = Color.WHITE;
-
-		//Keep track of elapsed time
-		//If raid is complete, stop the timer and don't keep updating it
-		if (raidSpeedRunTrackerPlugin.IsRaidComplete())
-		{
-			Split endSplit = raidSpeedRunTrackerPlugin.getSplit(RaidRoom.OLM);
-			elapsed = endSplit.getNewPbDuration();
-			Duration originalPbDuration = endSplit.originalPbDuration;
-
-			if (originalPbDuration != null)
-			{
-				if (elapsed.compareTo(originalPbDuration) < 0)
-				{
-					timeColor = Color.GREEN;
-				}
-				else
-				{
-					timeColor = Color.RED;
-				}
-			}
-		}
-		else
-		{
-			elapsed = Duration.between(startTime, Instant.now());
-		}
-
-		time = LocalTime.ofSecondOfDay(elapsed.getSeconds());
-
-		String formattedTime = time.format(DateTimeFormatter.ofPattern("mm:ss"));
 
 		Split[] splits = raidSpeedRunTrackerPlugin.getSplits();
 
@@ -114,18 +88,20 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 			//Also, determine the color based on the time difference
 			if (currentRow)
 			{
-				if (split.timeDifference == null && split.pbDuration != null)
+				if (split.timeDifference == null
+					&& split.pbDuration != null)
 				{
 					Duration splitDuration = Duration.between(startTime, Instant.now());
 					splitDuration = splitDuration.minus(split.pbDuration);
 
+					//TODO:ofSecondOfDay breaks when being passed more than an hour worth of seconds
 					LocalTime splitTime = LocalTime.ofSecondOfDay(splitDuration.abs().getSeconds());
 
 					if (splitDuration.isNegative())
 					{
 						splitColor = Color.GREEN;
 						splitString += "-";
-						if(!isRaidComplete)
+						if (!isRaidComplete)
 						{
 							timeColor = Color.GREEN;
 						}
@@ -134,13 +110,14 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 					{
 						splitColor = Color.RED;
 						splitString += "+";
-						if(!isRaidComplete)
+						if (!isRaidComplete)
 						{
 							timeColor = Color.RED;
 						}
 					}
 
-					splitString += splitTime.format(DateTimeFormatter.ofPattern("mm:ss"));
+					DateTimeFormatter splitTimeFormat = getTimeFormat(splitTime);
+					splitString += splitTime.format(splitTimeFormat);
 				}
 			}
 			else
@@ -153,13 +130,42 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 				}
 			}
 
-		//Denote current split with arrow
-		panelComponent.getChildren().add(LineComponent.builder()
+			//Denote current split with arrow
+			panelComponent.getChildren().add(LineComponent.builder()
 				.left(split.raidRoom.getName() + (currentRow ? " <-" : ""))
 				.right(splitString + " " + split.getPbString())
 				.rightColor(splitColor)
 				.build());
 		}
+
+		//Keep track of elapsed time
+		//If raid is complete, stop the timer and don't keep updating it
+		if (raidSpeedRunTrackerPlugin.IsRaidComplete())
+		{
+			Split endSplit = raidSpeedRunTrackerPlugin.getSplit(RaidRoom.OLM);
+			elapsed = endSplit.getNewPbDuration();
+			Duration originalPbDuration = endSplit.originalPbDuration;
+
+			if (originalPbDuration != null)
+			{
+				if (elapsed.compareTo(originalPbDuration) < 0)
+				{
+					timeColor = Color.GREEN;
+				}
+				else
+				{
+					timeColor = Color.RED;
+				}
+			}
+		}
+		else
+		{
+			elapsed = Duration.between(startTime, Instant.now());
+		}
+
+		time = LocalTime.ofSecondOfDay(elapsed.getSeconds());
+		DateTimeFormatter timeFormat = getTimeFormat(time);
+		String formattedTime = time.format(timeFormat);
 
 		panelComponent.getChildren().add(LineComponent.builder()
 			.left("Time:")
@@ -170,5 +176,10 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 		panelComponent.setPreferredSize(new Dimension(170, 0));
 
 		return panelComponent.render(graphics);
+	}
+
+	private DateTimeFormatter getTimeFormat(LocalTime time)
+	{
+		return DateTimeFormatter.ofPattern(time.getMinute() >= 60 ? HOUR_FORMAT : MINUTE_FORMAT);
 	}
 }

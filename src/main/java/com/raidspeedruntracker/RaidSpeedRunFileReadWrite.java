@@ -22,7 +22,6 @@ public class RaidSpeedRunFileReadWrite
 		try
 		{
 			Gson gson = new GsonBuilder().create();
-			JsonParser parser = new JsonParser();
 			String fileName = dir;
 
 			FileWriter fw = new FileWriter(fileName, false);

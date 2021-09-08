@@ -56,7 +56,9 @@ public class Split
 	private String getFormattedTimeString(Duration duration)
 	{
 		LocalTime time = LocalTime.ofSecondOfDay(duration.getSeconds());
-		String formattedTime = time.format(DateTimeFormatter.ofPattern("mm:ss"));
+		String formattedTime = time.format(time.getMinute() >= 60
+			? DateTimeFormatter.ofPattern("hh:mm")
+			: DateTimeFormatter.ofPattern("mm:ss"));
 
 		return formattedTime;
 	}

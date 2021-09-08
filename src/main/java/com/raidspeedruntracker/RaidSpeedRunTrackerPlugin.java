@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.Instant;
 import javax.inject.Inject;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -24,6 +25,8 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.raids.Raid;
+import net.runelite.client.plugins.raids.solver.LayoutSolver;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
@@ -50,6 +53,12 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 
 	@Setter
 	private RaidSpeedRunFileReadWrite fw = new RaidSpeedRunFileReadWrite();
+
+	@Getter
+	private Raid raid;
+
+	@Inject
+	private LayoutSolver layoutSolver;
 
 	private int cryp[] = new int[16], cryx[] = new int[16], cryy[] = new int[16];
 
@@ -78,7 +87,8 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION || event.getType() == ChatMessageType.GAMEMESSAGE)
+		if (event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION
+			|| event.getType() == ChatMessageType.GAMEMESSAGE)
 		{
 			String message = Text.removeTags(event.getMessage());
 
@@ -87,31 +97,31 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 				split();
 			}
 		}
-
-		if (event.getMessage().toLowerCase().startsWith("sp"))
-		{
-			split();
-		}
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		boolean startedRaid = client.getVar(Varbits.RAID_STATE) == 1;
+		boolean raidStarted = client.getVar(Varbits.RAID_STATE) > 0;
 		boolean inRaid = client.getVar(Varbits.IN_RAID) == 1;
+		boolean isCm = client.getVarbitValue(6385) == 1;
 		int teamSize = client.getVar(Varbits.RAID_PARTY_SIZE);
 
-		if (!speedRunTracker.raidInProgress && startedRaid)
+		if (raidStarted
+			&& !speedRunTracker.isRaidInProgress()
+			&& isCm
+			&& teamSize == 1)
 		{
 			speedRunTracker.teamSize = teamSize;
 			speedRunTracker.setTeamSize(teamSize);
-			speedRunTracker.setRaidInProgress(startedRaid);
+			speedRunTracker.setRaidInProgress(true);
 			speedRunTracker.setStartTime(Instant.now());
 
 			loadSplits();
 			overlayManager.add(overlay);
+
 		}
-		else if (speedRunTracker.raidInProgress && !startedRaid && !inRaid)
+		else if (speedRunTracker.raidInProgress && !inRaid)
 		{
 			ResetSpeedRunTracker();
 		}
@@ -165,7 +175,9 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 			int p = cryp[i];
 			int x = cryx[i] - client.getBaseX();
 			int y = cryy[i] - client.getBaseY();
-			if (p != client.getPlane() || x < 0 || x >= 104 || y < 0 || y >= 104)
+			if (p != client.getPlane()
+				|| x < 0 || x >= 104
+				|| y < 0 || y >= 104)
 			{
 				this.cryp[i] = -1;
 				continue;
@@ -275,7 +287,8 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 			Duration raidTotalTime = Duration.between(startTime, Instant.now());
 			Split pbTime = getSplit(RaidRoom.OLM);
 			//If original pb time doesn't exist or if the new time beats the old pb, save the splits
-			if (pbTime.originalPbDuration == null || raidTotalTime.compareTo(pbTime.originalPbDuration) < 0)
+			if (pbTime.originalPbDuration == null
+				|| raidTotalTime.compareTo(pbTime.originalPbDuration) < 0)
 			{
 				Split[] newPbSplits = buildNewPb(speedRunTracker.getSplits());
 				fw.SaveData(newPbSplits);
