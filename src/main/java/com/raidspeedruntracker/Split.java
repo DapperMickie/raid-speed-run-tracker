@@ -5,17 +5,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import net.runelite.client.plugins.raids.RaidRoom;
+import lombok.Data;
 
+@Data
 public class Split
 {
-	transient Instant startTime;
-
 	Duration pbDuration;
-	transient Duration splitDuration;
-	transient Duration originalPbDuration;
-	transient Duration s1;
-	transient Duration timeDiff;
+	transient Duration timeDifference;
+	transient Duration originalPbDuration = this.pbDuration;
+	transient Duration newPbDuration;
 
 	transient String pbString;
 	transient String splitString;
@@ -23,37 +21,43 @@ public class Split
 	RaidRoom raidRoom;
 	transient Color splitColor = Color.WHITE;
 
-	public Split(Instant startTime, Duration pbDuration, Duration splitDuration, RaidRoom raidRoom)
+	public Split(RaidRoom raidRoom)
 	{
-		this.startTime = startTime;
-		this.pbDuration = pbDuration;
-		this.splitDuration = splitDuration;
 		this.raidRoom = raidRoom;
-
-		if (pbDuration != null)
-		{
-			LocalTime pbTime = LocalTime.ofSecondOfDay(pbDuration.getSeconds());
-			String formattedPbTime = pbTime.format(DateTimeFormatter.ofPattern("mm:ss"));
-			pbString = formattedPbTime;
-		}
-		else
-		{
-			pbString = "-";
-		}
 	}
 
-	public void InitSplit()
+	public String getPbString()
 	{
-		if (pbDuration != null)
+		if (this.pbString == null && this.pbDuration != null)
 		{
-			LocalTime pbTime = LocalTime.ofSecondOfDay(pbDuration.getSeconds());
-			String formattedPbTime = pbTime.format(DateTimeFormatter.ofPattern("mm:ss"));
-			pbString = formattedPbTime;
-			this.originalPbDuration = pbDuration;
+			this.pbString = getFormattedTimeString(pbDuration);
 		}
-		else
+
+		if (this.pbDuration == null)
 		{
-			pbString = "-";
+			return "-";
 		}
+
+		return this.pbString;
+	}
+
+	public String getSplitString()
+	{
+		if (this.splitString == null && this.timeDifference != null)
+		{
+			//Show either - or + time
+			this.splitString = this.timeDifference.isNegative() ? "-" : "+";
+			this.splitString += getFormattedTimeString(this.timeDifference.abs());
+		}
+
+		return this.splitString;
+	}
+
+	private String getFormattedTimeString(Duration duration)
+	{
+		LocalTime time = LocalTime.ofSecondOfDay(duration.getSeconds());
+		String formattedTime = time.format(DateTimeFormatter.ofPattern("mm:ss"));
+
+		return formattedTime;
 	}
 }
