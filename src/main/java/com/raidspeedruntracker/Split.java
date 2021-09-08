@@ -2,7 +2,6 @@ package com.raidspeedruntracker;
 
 import java.awt.Color;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import lombok.Data;

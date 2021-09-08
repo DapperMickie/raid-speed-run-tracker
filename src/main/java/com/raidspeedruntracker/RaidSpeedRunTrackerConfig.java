@@ -7,24 +7,15 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("raidspeedruntracker")
 public interface RaidSpeedRunTrackerConfig extends Config
 {
-	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
-	)
-	default String greeting()
-	{
-		return "Hello";
-	}
-
-	@ConfigItem(
-		keyName = "trackMilliseconds",
-		name = "Track Milliseconds",
-		description = "Track splits with millisecond accuracy"
-	)
-	default boolean trackMilliseconds(){
-		return true;
-	}
+	//TODO: Add millisecond tracking
+//	@ConfigItem(
+//		keyName = "trackMilliseconds",
+//		name = "Track Milliseconds",
+//		description = "Track splits with millisecond accuracy"
+//	)
+//	default boolean trackMilliseconds(){
+//		return true;
+//	}
 
 	@ConfigItem(
 		keyName = "numLines",

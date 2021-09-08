@@ -2,14 +2,7 @@ package com.raidspeedruntracker;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import jdk.vm.ci.meta.Local;
 import lombok.Data;
-
-import java.util.UUID;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import net.runelite.api.coords.LocalPoint;
 
 @Data
 public class SpeedRunTracker

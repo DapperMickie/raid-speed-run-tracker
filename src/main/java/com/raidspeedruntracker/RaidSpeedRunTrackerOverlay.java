@@ -1,6 +1,9 @@
 package com.raidspeedruntracker;
 
 import com.google.inject.Inject;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -11,9 +14,6 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
-
-import java.awt.*;
-
 
 public class RaidSpeedRunTrackerOverlay extends Overlay
 {
@@ -172,7 +172,7 @@ public class RaidSpeedRunTrackerOverlay extends Overlay
 			.rightColor(timeColor)
 			.build());
 
-		panelComponent.setPreferredSize(new Dimension(170, 0));
+		panelComponent.setPreferredSize(new Dimension(185, 0));
 
 		return panelComponent.render(graphics);
 	}
