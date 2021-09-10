@@ -1,5 +1,6 @@
 package com.raidspeedruntracker;
 
+//Credit to dey0 for this: https://github.com/dey0/pluginhub-plugins
 public class CoxUtil {
 
 	// p=plane, y=y_8, x=x_8, r=rot pp_xxxxxxxxxx_yyyyyyyyyy_rr0

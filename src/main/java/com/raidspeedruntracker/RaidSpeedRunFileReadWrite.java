@@ -6,6 +6,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import lombok.Getter;
 import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
@@ -15,9 +19,7 @@ public class RaidSpeedRunFileReadWrite
 	private String username;
 	private String dir;
 
-
-	public void SaveData(Split[] splits)
-	{
+	public void SaveData(List<SpeedRun> speedRuns){
 		try
 		{
 			Gson gson = new GsonBuilder().create();
@@ -25,7 +27,7 @@ public class RaidSpeedRunFileReadWrite
 
 			FileWriter fw = new FileWriter(fileName, false);
 
-			gson.toJson(splits, fw);
+			gson.toJson(speedRuns, fw);
 
 			fw.append("\n");
 
@@ -37,15 +39,20 @@ public class RaidSpeedRunFileReadWrite
 		}
 	}
 
-	public Split[] LoadData()
-	{
+	public List<SpeedRun> LoadData(){
 		try
 		{
 			Gson gson = new GsonBuilder().create();
 			String fileName = dir;
 
 			FileReader fr = new FileReader(fileName);
-			return gson.fromJson(fr, Split[].class);
+			SpeedRun[] speedRuns =  gson.fromJson(fr, SpeedRun[].class);
+			if(speedRuns != null && speedRuns.length >= 0)
+			{
+				return Arrays.asList(speedRuns);
+			}
+
+			return null;
 		}
 		catch (IOException e)
 		{

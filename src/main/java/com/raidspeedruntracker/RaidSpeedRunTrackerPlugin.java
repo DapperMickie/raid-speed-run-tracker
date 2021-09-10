@@ -3,8 +3,11 @@ package com.raidspeedruntracker;
 import com.google.inject.Provides;
 import static com.raidspeedruntracker.CoxUtil.getroom_type;
 import java.awt.Color;
+import java.lang.reflect.Array;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 
 import lombok.Getter;
@@ -54,15 +57,11 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 	@Setter
 	private RaidSpeedRunFileReadWrite fw = new RaidSpeedRunFileReadWrite();
 
-	@Getter
-	private Raid raid;
-
-	@Inject
-	private LayoutSolver layoutSolver;
-
 	private int cryp[] = new int[16], cryx[] = new int[16], cryy[] = new int[16];
 
 	private static final String RAID_COMPLETE_MESSAGE = "Congratulations - your raid is complete!";
+	private static final String RAID_START_MESSAGE = "The raid has begun!";
+	private static final int CM_FLAG_VARBIT = 6385;
 
 	@Override
 	protected void startUp() throws Exception
@@ -96,6 +95,16 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 			{
 				split();
 			}
+
+			if (message.startsWith(RAID_START_MESSAGE))
+			{
+				speedRunTracker.setRaidStarted(true);
+			}
+		}
+
+		if (event.getMessage().toLowerCase().startsWith("sp"))
+		{
+			split();
 		}
 	}
 
@@ -104,20 +113,20 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 	{
 		boolean raidStarted = client.getVar(Varbits.RAID_STATE) > 0;
 		boolean inRaid = client.getVar(Varbits.IN_RAID) == 1;
-		boolean isCm = client.getVarbitValue(6385) == 1;
+		boolean isCm = client.getVarbitValue(CM_FLAG_VARBIT) == 1;
 		int teamSize = client.getVar(Varbits.RAID_PARTY_SIZE);
 
-		if (raidStarted
+		if (speedRunTracker.isRaidStarted()
+			&& inRaid
 			&& !speedRunTracker.isRaidInProgress()
 			&& isCm
-			&& teamSize == 1)
+		)
 		{
-			speedRunTracker.teamSize = teamSize;
 			speedRunTracker.setTeamSize(teamSize);
 			speedRunTracker.setRaidInProgress(true);
 			speedRunTracker.setStartTime(Instant.now());
 
-			loadSplits();
+			loadSplits(teamSize);
 			overlayManager.add(overlay);
 
 		}
@@ -125,8 +134,15 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 		{
 			ResetSpeedRunTracker();
 		}
+		//Sometimes when the raid starts, the raid size isn't correct. If the team gets larger, set the new size and re-load the splits
+		else if (speedRunTracker.isRaidInProgress() && inRaid && teamSize > speedRunTracker.getTeamSize())
+		{
+			speedRunTracker.setTeamSize(teamSize);
+			loadSplits(teamSize);
+		}
 	}
 
+	//Credit to dey0 for this: https://github.com/dey0/pluginhub-plugins
 	@Subscribe
 	public void onGameObjectSpawned(GameObjectSpawned e)
 	{
@@ -163,6 +179,7 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 		}
 	}
 
+	//Credit to dey0 for this: https://github.com/dey0/pluginhub-plugins
 	@Subscribe
 	public void onClientTick(ClientTick e)
 	{
@@ -199,21 +216,21 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 
 	public Split getSplit(RaidRoom raidRoom)
 	{
-		for (int i = 0; i < speedRunTracker.getSplits().length; i++)
+		SpeedRun speedRun = speedRunTracker.getCurrentSpeedRun();
+		for (Split split : speedRun.getSplits())
 		{
-			Split split = speedRunTracker.getSplits()[i];
 			if (split.raidRoom == raidRoom)
 			{
 				return split;
 			}
-		}
 
+		}
 		return null;
 	}
 
 	public Split[] getSplits()
 	{
-		return speedRunTracker.getSplits();
+		return speedRunTracker.getCurrentSpeedRun().getSplits();
 	}
 
 
@@ -232,20 +249,29 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 		return speedRunTracker.raidComplete;
 	}
 
-	private void loadSplits()
+	private void loadSplits(int teamSize)
 	{
 		//When the raid starts, begin to load the split data
-		Split[] splits = fw.LoadData();
+		List<SpeedRun> speedRuns = fw.LoadData();
 
-		if (splits != null)
+		if (speedRuns != null)
 		{
-			for (int i = 0; i < splits.length; i++)
+			for (SpeedRun speedRun : speedRuns)
 			{
-				splits[i].setOriginalPbDuration(splits[i].pbDuration);
+				if (speedRun.getTeamSize() == teamSize)
+				{
+					for (Split split : speedRun.getSplits())
+					{
+						split.setOriginalPbDuration(split.getOriginalPbDuration());
+					}
+					speedRunTracker.setCurrentSpeedRun(speedRun);
+				}
 			}
 
-			speedRunTracker.setSplits(splits);
+			speedRunTracker.setSpeedRuns(speedRuns);
 		}
+
+		speedRunTracker.getCurrentSpeedRun().setTeamSize(teamSize);
 	}
 
 	private void split()
@@ -290,8 +316,31 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 			if (pbTime.originalPbDuration == null
 				|| raidTotalTime.compareTo(pbTime.originalPbDuration) < 0)
 			{
-				Split[] newPbSplits = buildNewPb(speedRunTracker.getSplits());
-				fw.SaveData(newPbSplits);
+				SpeedRun currentRun = speedRunTracker.getCurrentSpeedRun();
+				//Set the current speedrun's splits to be the new pb
+				Split[] newPbSplits = buildNewPb(currentRun.getSplits());
+				//Replace the old speedrun with matching team size to the one with the new pb
+				List<SpeedRun> speedRuns = speedRunTracker.getSpeedRuns();
+
+				boolean added = false;
+
+				for (SpeedRun speedRun : speedRuns)
+				{
+					if (speedRunTracker.getCurrentSpeedRun() == speedRun)
+					{
+						speedRun.setSplits(newPbSplits);
+						added = true;
+					}
+				}
+
+				if (!added)
+				{
+					speedRuns = new ArrayList<>(speedRuns);
+					speedRuns.add(currentRun);
+					speedRunTracker.setSpeedRuns(speedRuns);
+				}
+
+				fw.SaveData(speedRuns);
 			}
 
 			speedRunTracker.setRaidComplete(true);
