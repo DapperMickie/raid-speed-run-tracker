@@ -101,11 +101,6 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 				speedRunTracker.setRaidStarted(true);
 			}
 		}
-
-		if (event.getMessage().toLowerCase().startsWith("sp"))
-		{
-			split();
-		}
 	}
 
 	@Subscribe

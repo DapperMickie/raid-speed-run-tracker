@@ -19,7 +19,8 @@ public class RaidSpeedRunFileReadWrite
 	private String username;
 	private String dir;
 
-	public void SaveData(List<SpeedRun> speedRuns){
+	public void SaveData(List<SpeedRun> speedRuns)
+	{
 		try
 		{
 			Gson gson = new GsonBuilder().create();
@@ -39,16 +40,33 @@ public class RaidSpeedRunFileReadWrite
 		}
 	}
 
-	public List<SpeedRun> LoadData(){
+	public List<SpeedRun> LoadData()
+	{
 		try
 		{
 			Gson gson = new GsonBuilder().create();
 			String fileName = dir;
 
 			FileReader fr = new FileReader(fileName);
-			SpeedRun[] speedRuns =  gson.fromJson(fr, SpeedRun[].class);
-			if(speedRuns != null && speedRuns.length >= 0)
+			SpeedRun[] speedRuns = gson.fromJson(fr, SpeedRun[].class);
+			if (speedRuns != null && speedRuns.length >= 0)
 			{
+				//This is the old format json that didn't handle multiple players, convert it into new class
+				if (speedRuns.length == 13 && speedRuns[0].getTeamSize() == -1)
+				{
+					fr.close();
+					//Reset file reader, otherwise json can't be read
+					fr = new FileReader(fileName);
+					//Empty out the speedruns array
+					speedRuns = new SpeedRun[1];
+					//Create the new speedrun based off the old splits
+					SpeedRun tempSpeedRun = new SpeedRun();
+					tempSpeedRun.setTeamSize(1);
+					Split[] splits = gson.fromJson(fr, Split[].class);
+					tempSpeedRun.setSplits(splits);
+
+					speedRuns[0] = tempSpeedRun;
+				}
 				return Arrays.asList(speedRuns);
 			}
 
