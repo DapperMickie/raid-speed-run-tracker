@@ -6,11 +6,11 @@ Shows current time as well as time finished for each room as well as how ahead o
 ![Example Splits image](src/main/java/com/raidspeedruntracker/resources/example-splits.png)
 
 ## To do:
-* ~~Add for multiple players~~
-* Gold splits
-* Side panel tracking - in progress
-* Normal CoX
-* Tob
+- [X] Add for multiple players
+- [ ] Gold splits
+- [ ] Side panel tracking - in progress
+- [ ] Normal CoX
+- [ ] Tob
 
-##Feedback:
+## Feedback:
 If you have any feedback or possible improvements, please feel free to submit an issue.
