@@ -62,6 +62,7 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 	private static final String RAID_COMPLETE_MESSAGE = "Congratulations - your raid is complete!";
 	private static final String RAID_START_MESSAGE = "The raid has begun!";
 	private static final int CM_FLAG_VARBIT = 6385;
+	private static final int RAID_PARTY_SIZE = 5424;
 
 	@Override
 	protected void startUp() throws Exception
@@ -109,7 +110,7 @@ public class RaidSpeedRunTrackerPlugin extends Plugin
 		boolean raidStarted = client.getVar(Varbits.RAID_STATE) > 0;
 		boolean inRaid = client.getVar(Varbits.IN_RAID) == 1;
 		boolean isCm = client.getVarbitValue(CM_FLAG_VARBIT) == 1;
-		int teamSize = client.getVar(Varbits.RAID_PARTY_SIZE);
+		int teamSize = client.getVarbitValue(RAID_PARTY_SIZE);
 
 		if (speedRunTracker.isRaidStarted()
 			&& inRaid
